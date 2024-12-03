@@ -27,6 +27,7 @@ library
   exposed-modules:
       Day1
       Day2
+      Day3
       UtilityFunctions
   other-modules:
       Paths_adventofcode2024

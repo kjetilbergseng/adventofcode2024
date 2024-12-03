@@ -20,7 +20,9 @@ isSafeB li
   | otherwise = and $ isSafeA (filterUnSafe li (isSafeA li))
 
 filterUnSafe :: [Int] -> [Bool] -> [Int]
-filterUnSafe li liMask = map fst (takeWhile snd (zip li (True : liMask))) ++ tail (map fst $ dropWhile snd (zip li (True : liMask)))
+filterUnSafe li liMask = map fst (takeWhile snd tpls) ++ tail (map fst $ dropWhile snd tpls)
+  where
+    tpls = zip li (True : liMask)
 
 isSafeA :: [Int] -> [Bool]
 isSafeA li@(_ : xs) = zipWith (&&) (isSlopeMonotone slopes) (map isSlopeGradientSafe slopes)
