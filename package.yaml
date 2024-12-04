@@ -35,7 +35,9 @@ ghc-options:
 
 library:
   source-dirs: src
-
+  dependencies:
+    - matrix
+    
 executables:
   adventofcode2024-exe:
     main:                Main.hs
@@ -46,6 +48,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - adventofcode2024
+    - matrix
 
 tests:
   adventofcode2024-test:

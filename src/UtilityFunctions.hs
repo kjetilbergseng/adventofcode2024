@@ -8,6 +8,12 @@ chunk n ls
   | n <= 0 || null ls = []
   | otherwise = take n ls : chunk n (drop n ls)
 
+slide :: Int -> [a] -> [[a]]
+slide n ls
+  | n <= 0 || length ls < n = []
+  | otherwise = take n ls : slide n (tail ls)
+  
+
 splitIf :: (a -> Bool) -> [a] -> [[a]]
 splitIf pred ls
   | null ls = []
