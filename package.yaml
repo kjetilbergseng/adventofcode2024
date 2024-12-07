@@ -37,7 +37,7 @@ library:
   source-dirs: src
   dependencies:
     - matrix
-    
+    - containers
 executables:
   adventofcode2024-exe:
     main:                Main.hs
