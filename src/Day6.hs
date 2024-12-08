@@ -18,11 +18,11 @@ getStartPos =
 
 add (x, y) (i, j) = (x + i, y + j)
 
-move dir pos set m
-  | next == Nothing = (False, set)
-  | Set.member (dir, pos) set = (True, set)
-  | next == Just '#' = move (rotateRight dir) pos set m
-  | otherwise = move dir (add pos dir) (Set.insert (dir, pos) set) m
+move dir pos route m
+  | next == Nothing = (False, route)
+  | Set.member (dir, pos) route = (True, route)
+  | next == Just '#' = move (rotateRight dir) pos route m
+  | otherwise = move dir (add pos dir) (Set.insert (dir, pos) route) m
   where
     next = uncurry Matrix.safeGet (add dir pos) m
 
@@ -31,12 +31,12 @@ getSum =
     . size
     . Set.map snd
 
-findLoops mat =
+findLoops dir pos mat =
   Set.size
     . Set.fromList
     . Prelude.map (uncurry add)
     . Prelude.filter
-      (\(d, p) -> nextElem d p mat == '.' && isLoop d p (updateMap (add d p) mat))
+      (\(d, p) -> nextElem d p mat == '.' && isLoop dir pos (updateMap (add d p) mat))
 
 nextElem dir pos = uncurry Matrix.getElem (add dir pos)
 
@@ -50,8 +50,9 @@ day6 = do
   contents <- readFile "input/day6.txt"
   let input = Matrix.fromLists . lines $ contents
   let pos = getStartPos input
+  print pos
   let dir = (-1, 0)
   let set = snd . move dir pos Set.empty $ input
   print . getSum $ set
-  let positions = Set.toList set
-  print . findLoops input $ positions
+  let route = Set.toList set
+  print . findLoops dir pos input $ route
