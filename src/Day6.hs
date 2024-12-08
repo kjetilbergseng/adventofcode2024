@@ -1,66 +1,57 @@
 {-# LANGUAGE GHC2021 #-}
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-
 {-# HLINT ignore "Use isNothing" #-}
+{-# OPTIONS_GHC -Wno-missing-signatures #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 module Day6 (day6) where
 
-import Data.Matrix (Matrix, fromLists, mapPos, safeGet, safeSet, toList)
+import Data.Matrix as Matrix
+import Data.Set as Set
 
-rotateRight :: (Num b) => (b, a) -> (a, b)
 rotateRight (a, b) = (b, -a)
 
-getPos :: [Maybe a] -> Maybe a
-getPos (Nothing : xs) = getPos xs
-getPos [] = Nothing
-getPos (x : _) = x
+getStartPos =
+  head
+    . Prelude.filter (/= (-1, -1))
+    . Matrix.toList
+    . Matrix.mapPos (\(i, j) x -> if x == '^' then (i, j) else (-1, -1))
 
-getStartPos :: Matrix Char -> Maybe (Int, Int)
-getStartPos m = getPos $ toList $ mapPos (\(i, j) x -> if x == '.' || x == '#' then Nothing else Just (i, j)) m
+add (x, y) (i, j) = (x + i, y + j)
 
-getDirection :: (Num a, Num b) => Char -> Maybe (a, b)
-getDirection '^' = Just (-1, 0)
-getDirection '<' = Just (0, -1)
-getDirection '>' = Just (0, 1)
-getDirection 'v' = Just (1, 0)
-getDirection _ = Nothing
-
-getStartDirection :: Maybe (Int, Int) -> Matrix Char -> Maybe (Int, Int)
-getStartDirection Nothing _ = Nothing
-getStartDirection (Just (i, j)) m = safeGet i j m >>= getDirection
-
-maybeAdd :: (Num a, Num b) => Maybe (a, b) -> (a, b) -> Maybe (a, b)
-maybeAdd (Just (x, y)) (i, j) = Just (x + i, y + j)
-maybeAdd _ _ = Nothing
-
-move :: Maybe (Int, Int) -> Maybe (Int, Int) -> Matrix Char -> Maybe (Matrix Char)
-move _ Nothing _ = Nothing
-move Nothing _ _ = Nothing
-move dir@(Just (i, j)) pos@(Just (x, y)) m
-  | next == Nothing = m'
-  | next == Just '#' = m' >>= move (Just dir') nextPos'
-  | otherwise = m' >>= move dir nextPos
+move dir pos set m
+  | next == Nothing = (False, set)
+  | Set.member (dir, pos) set = (True, set)
+  | next == Just '#' = move (rotateRight dir) pos set m
+  | otherwise = move dir (add pos dir) (Set.insert (dir, pos) set) m
   where
-    next = safeGet (x + i) (y + j) m
-    nextPos = dir >>= maybeAdd pos
-    dir' = rotateRight (i, j)
-    nextPos' = maybeAdd pos dir'
-    m' = safeSet '1' (x, y) m
+    next = uncurry Matrix.safeGet (add dir pos) m
 
-getSum :: Maybe (Matrix Char) -> Int
-getSum Nothing = 0
-getSum (Just m) = sum $ toList $ mapPos (\_ x -> if x == '1' then 1 else 0) m
+getSum =
+  (+ 1)
+    . size
+    . Set.map snd
+
+findLoops mat =
+  Set.size
+    . Set.fromList
+    . Prelude.map (uncurry add)
+    . Prelude.filter
+      (\(d, p) -> nextElem d p mat == '.' && isLoop d p (updateMap (add d p) mat))
+
+nextElem dir pos = uncurry Matrix.getElem (add dir pos)
+
+isLoop dir pos = fst . move dir pos Set.empty
+
+updateMap = Matrix.setElem '#'
 
 day6 :: IO ()
 day6 = do
   putStrLn "day6"
   contents <- readFile "input/day6.txt"
-  let input = lines contents
-  let m = fromLists input
-  let pos = getStartPos m
-  let dir = getStartDirection pos m
-
-  print m
-  print pos
-  print dir
-  print $ (getSum . move dir pos) m
+  let input = Matrix.fromLists . lines $ contents
+  let pos = getStartPos input
+  let dir = (-1, 0)
+  let set = snd . move dir pos Set.empty $ input
+  print . getSum $ set
+  let positions = Set.toList set
+  print . findLoops input $ positions
